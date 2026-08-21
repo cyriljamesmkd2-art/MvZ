@@ -36,6 +36,364 @@ h1{font:900 32px/0.95 Fraunces;margin:0;letter-spacing:-.02em}h1 span{background
 .overlay{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(247,245,240,.4);backdrop-filter:blur(8px)}.overlay.active{display:flex}.card{width:100%;max-width:360px;border-radius:26px;padding:28px 22px;text-align:center}.card h2{font:900 30px Fraunces;margin:0 0 8px}.card p{color:var(--dim);font-size:14px;line-height:1.5;margin:0 0 18px}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}@keyframes pop{0%{opacity:0;transform:scale(.8)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}@keyframes drop{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
 @media(max-width:360px){h1{font-size:28px}.link{font-size:17px;padding:12px 15px}}
+/* =========================================================
+   CHAIN — MOBILE UI UPGRADE
+========================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+button,
+input {
+  touch-action: manipulation;
+}
+
+/* Better phone layout */
+.wrap {
+  width: 100%;
+  max-width: 520px;
+  min-height: 100dvh;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    14px
+    max(18px, env(safe-area-inset-bottom));
+}
+
+/* Compact header on phones */
+header {
+  padding: 4px 2px 15px;
+}
+
+h1 {
+  font-size: clamp(28px, 8vw, 34px);
+}
+
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: .18em;
+}
+
+.stats {
+  gap: 7px;
+}
+
+.stat {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px !important;
+}
+
+.stat .n {
+  font-size: 16px;
+}
+
+.stat .l {
+  font-size: 7px;
+}
+
+/* Better category buttons */
+.cat,
+.btn {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.grid {
+  gap: 9px;
+}
+
+/* Room code */
+.room-code {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: clamp(28px, 9vw, 38px);
+  letter-spacing: .16em;
+
+  overflow:hidden;
+}
+
+/* Game panel */
+.panel {
+  padding:
+    15px 13px
+    max(12px, env(safe-area-inset-bottom));
+
+  border-radius: 23px;
+}
+
+/* Player status */
+.status {
+  font-size: 10.5px;
+  padding-bottom: 11px;
+  margin-bottom: 10px;
+}
+
+.status b {
+  font-size: 11px;
+}
+
+/* Bigger timer */
+.timer {
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.track {
+  height: 8px;
+}
+
+.timer-num {
+  width: 43px;
+  font-size: 11px;
+}
+
+/* Chain gets more screen space */
+.chain {
+  padding:
+    5px 1px
+    8px;
+
+  overscroll-behavior: contain;
+}
+
+/* Mobile-friendly words */
+.link {
+  max-width: 88%;
+  min-height: 46px;
+
+  padding: 12px 16px;
+
+  font-size: clamp(16px, 4.8vw, 19px);
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.link .tag {
+  font-size: 7.5px;
+}
+
+/* Input area stays visually separated */
+.input-row {
+  flex-shrink: 0;
+
+  gap: 7px;
+
+  margin-top: 8px;
+  padding-top: 11px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0),
+      rgba(255,255,255,.12)
+    );
+}
+
+/* Letter badge */
+.badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+
+  font-size: 21px;
+}
+
+/* Word input */
+.input-row .field {
+  height: 50px;
+
+  min-width: 0;
+
+  padding:
+    0 14px;
+
+  font-size: 16px;
+
+  border-radius: 14px;
+
+  /* Prevent iOS/Android zoom */
+  font-size: 16px;
+}
+
+/* Submit */
+.submit {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 14px;
+
+  font-size: 18px;
+
+  flex-shrink: 0;
+}
+
+/* Better tap feedback */
+.submit:active,
+.btn:active,
+.linkbtn:active {
+  transform: scale(.94);
+}
+
+.cat:active {
+  transform: scale(.96);
+}
+
+/* Turn message */
+.msg {
+  min-height: 19px;
+
+  margin-top: 7px;
+
+  font-size: 10.5px;
+
+  padding:
+    0 4px;
+}
+
+/* Bottom controls */
+.bottom {
+  gap: 14px;
+
+  padding-top: 2px;
+}
+
+.linkbtn {
+  min-height: 30px;
+
+  font-size: 9.5px;
+}
+
+/* Keyboard-friendly behavior */
+@media (max-height: 700px) {
+
+  header {
+    padding-bottom: 9px;
+  }
+
+  .eyebrow {
+    margin-bottom: 4px;
+  }
+
+  .panel {
+    padding-top: 12px;
+  }
+
+  .timer {
+    margin-bottom: 6px;
+  }
+
+  .chain {
+    padding-bottom: 5px;
+  }
+
+  .input-row {
+    margin-top: 5px;
+    padding-top: 8px;
+  }
+
+  .msg {
+    margin-top: 4px;
+  }
+
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+
+  .wrap {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .stats {
+    gap: 5px;
+  }
+
+  .stat {
+    width: 46px;
+    height: 46px;
+  }
+
+  h1 {
+    font-size: 27px;
+  }
+
+  .grid {
+    gap: 7px;
+  }
+
+  .cat {
+    min-height: 50px;
+    font-size: 16px;
+  }
+
+  .link {
+    max-width: 91%;
+    padding: 11px 14px;
+    font-size: 16px;
+  }
+
+  .badge,
+  .submit {
+    width: 48px;
+    height: 48px;
+  }
+
+  .input-row .field {
+    height: 48px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+}
+
+/* Landscape phones */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  .wrap {
+    max-width: 760px;
+  }
+
+  header {
+    padding-bottom: 8px;
+  }
+
+  .game {
+    min-height: 360px;
+  }
+
+  .chain {
+    max-height: 230px;
+  }
+
+}
+
+/* Respect phones with reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+}
 </style>
 </head>
 <body>
@@ -143,7 +501,63 @@ Food:["Apple","Avocado","Bacon","Bagel","Banana","Beans","Beef","Beet","Biryani"
 Movies:["Alien","Avatar","Batman","Cars","Coco","Contact","Dune","Elf","Encanto","Frozen","Gladiator","Grease","Hercules","Inception","Interstellar","Joker","Jaws","Klaus","Luca","Matrix","Moana","Nemo","Notebook","Oppenheimer","Onward","Parasite","Psycho","Ratatouille","Rio","Rocky","Shrek","Soul","Tangled","Titanic","Up","Vice","Whiplash","Wonka","Zootopia","Zodiac"],
 Anything:["Ant","Apple","Arrow","Ball","Book","Bridge","Cup","Cat","Candle","Door","Dream","Drum","Ear","Eagle","Engine","Fan","Feather","Forest","Gate","Garden","Guitar","Hat","House","Harbor","Ink","Island","Igloo","Jacket","Jar","Jungle","Kite","Key","Kingdom","Lamp","Lion","Lake","Moon","Mountain","Mirror","Nest","Nose","Needle","Ocean","Orange","Owl","Pencil","Piano","Puzzle","Queen","Quilt","Quiver","River","Rain","Rocket","Star","Sun","Stone","Table","Tiger","Tower","Umbrella","Unicorn","Urn","Van","Violin","Village","Water","Wall","Window","Xylophone","Yarn","Yellow","Yak","Zebra","Zoo","Zephyr"]
 };
+// ============================================================
+// LARGE ENGLISH DICTIONARY FOR "ANYTHING"
+// ============================================================
 
+let LARGE_ENGLISH_WORDS = new Set();
+let dictionaryReady = false;
+
+const DICTIONARY_URL =
+  "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt";
+
+async function loadLargeDictionary() {
+  try {
+    const response = await fetch(DICTIONARY_URL);
+
+    if (!response.ok) {
+      throw new Error("Dictionary download failed");
+    }
+
+    const text = await response.text();
+
+    LARGE_ENGLISH_WORDS = new Set(
+      text
+        .split(/\r?\n/)
+        .map(word => word.trim().toLowerCase())
+        .filter(word =>
+          word.length >= 2 &&
+          /^[a-z]+$/.test(word)
+        )
+    );
+
+    // Add our existing Anything words too
+    for (const word of BANKS.Anything) {
+      LARGE_ENGLISH_WORDS.add(normalize(word));
+    }
+
+    dictionaryReady = true;
+
+    console.log(
+      "Chain dictionary loaded:",
+      LARGE_ENGLISH_WORDS.size,
+      "words"
+    );
+
+  } catch (error) {
+    console.error("Dictionary error:", error);
+
+    // Game can still use the built-in Anything list
+    LARGE_ENGLISH_WORDS = new Set(
+      BANKS.Anything.map(normalize)
+    );
+
+    dictionaryReady = false;
+  }
+}
+
+loadLargeDictionary();
+  
 const $=id=>document.getElementById(id);
 const screens=["home","create","waiting","join","game"];
 let room=null, roomChannel=null, mySlot=0, myId=null, myName="", category="";
@@ -164,8 +578,18 @@ function generateCode(){
   return out;
 }
 
-function bankHas(word){
-  return (BANKS[category]||[]).some(x=>normalize(x)===normalize(word));
+function bankHas(word) {
+
+  const clean = normalize(word);
+
+  // Anything = large English dictionary
+  if (category === "Anything") {
+    return LARGE_ENGLISH_WORDS.has(clean);
+  }
+
+  // Category games = use the category bank
+  return (BANKS[category] || [])
+    .some(x => normalize(x) === clean);
 }
 
 function setTimerFromRoom(r){
