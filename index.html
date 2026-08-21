@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Chain — multiplayer word game</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+:root{--ink:#211D30;--dim:rgba(33,29,48,.56);--coral:#F0553D;--gold:#D69A2C;--mint:#1FAE8E;--mint2:#2BBFA0;--glass:rgba(255,255,255,.55);--edge:rgba(33,29,48,.08);--shadow:0 14px 34px rgba(33,29,48,.12),inset 0 1px 0 rgba(255,255,255,.7)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100vh;background:#F7F5F0;color:var(--ink);font-family:Inter,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 600px 500px at 10% 6%,rgba(240,85,61,.20),transparent 62%),radial-gradient(ellipse 560px 520px at 95% 15%,rgba(31,174,142,.20),transparent 60%),radial-gradient(ellipse 700px 600px at 25% 100%,rgba(214,154,44,.16),transparent 60%),radial-gradient(ellipse 520px 520px at 100% 100%,rgba(120,110,255,.14),transparent 58%),linear-gradient(180deg,#FBFAF7,#F5F3EE);filter:blur(56px)}
+body:after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(rgba(33,29,48,.035) 1px,transparent 1px);background-size:3px 3px;opacity:.6}
+.wrap{max-width:480px;margin:auto;min-height:100vh;padding:22px 16px 24px;position:relative;z-index:1;display:flex;flex-direction:column}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--edge);box-shadow:var(--shadow);position:relative}
+.glass:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.55),rgba(255,255,255,0) 32%)}
+header{display:flex;align-items:center;justify-content:space-between;padding:6px 4px 20px}
+.eyebrow{font:600 10.5px 'IBM Plex Mono';letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:7px}
+h1{font:900 32px/0.95 Fraunces;margin:0;letter-spacing:-.02em}h1 span{background:linear-gradient(135deg,var(--coral),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-style:italic}
+.stats{display:flex;gap:9px}.stat{width:54px;height:54px;border-radius:17px;display:flex;flex-direction:column;align-items:center;justify-content:center}.stat .n{font:900 17px Fraunces}.stat .l{font:7.5px 'IBM Plex Mono';letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:4px}.streak .n{color:var(--coral)}.best .n{color:var(--gold)}
+.screen{display:flex;flex-direction:column;gap:12px}.hidden{display:none!important}
+.hint{padding:16px 18px;border-radius:18px;color:var(--dim);font-size:13.5px;line-height:1.6;margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.btn{font:700 17px Fraunces;color:var(--ink);padding:18px 12px;border-radius:18px;cursor:pointer}.btn:active{transform:scale(.96)}.btn.primary{background:linear-gradient(135deg,var(--mint2),#17A88A);color:#fff;border:0}.btn.any{grid-column:1/-1;background:linear-gradient(135deg,rgba(240,85,61,.14),rgba(214,154,44,.10));color:var(--coral)}
+.field{width:100%;height:52px;border:1px solid rgba(33,29,48,.12);border-radius:16px;background:rgba(255,255,255,.58);padding:0 16px;font:500 16px Inter;color:var(--ink);outline:none}.field:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(31,174,142,.12)}
+.room-code{font:900 34px Fraunces;letter-spacing:.12em;text-align:center;padding:15px;border-radius:18px;color:var(--coral)}
+.center{text-align:center}.small{font:11px 'IBM Plex Mono';color:var(--dim)}.error{color:var(--coral)!important}.success{color:var(--mint)!important}
+.game{display:flex;flex-direction:column;flex:1;min-height:0}.panel{border-radius:26px;padding:18px 16px 16px;display:flex;flex-direction:column;min-height:0;flex:1}
+.status{display:flex;justify-content:space-between;align-items:center;font:11.5px 'IBM Plex Mono';color:var(--dim);padding-bottom:13px;border-bottom:1px solid rgba(33,29,48,.08);margin-bottom:12px}.status b{color:var(--mint)}
+.timer{display:flex;align-items:center;gap:10px;margin-bottom:14px}.track{flex:1;height:7px;border-radius:999px;background:rgba(33,29,48,.07);overflow:hidden}.fill{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint2),#57D8B8);transition:width .1s linear}.fill.warn{background:linear-gradient(90deg,var(--gold),#F2BE50)}.fill.danger{background:linear-gradient(90deg,var(--coral),#FF7965)}.timer-num{width:40px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:var(--dim)}
+.chain{flex:1;overflow-y:auto;padding:4px 2px 10px;display:flex;flex-direction:column;gap:0;min-height:0}.link{display:flex;align-items:center;gap:8px;padding:13px 17px;border-radius:999px;background:rgba(255,255,255,.62);border:1px solid rgba(240,85,61,.28);box-shadow:0 4px 16px rgba(33,29,48,.08),inset 0 1px 0 rgba(255,255,255,.7);font:600 18px Fraunces;position:relative;animation:drop .35s ease}.link.you{align-self:flex-end;border-color:rgba(31,174,142,.35)}.mark{font-style:italic;font-weight:900;color:var(--coral)}.you .mark{color:var(--mint)}.tag{position:absolute;top:-9px;left:18px;background:#FBFAF7;border:1px solid rgba(33,29,48,.08);border-radius:4px;padding:0 7px;font:8.5px 'IBM Plex Mono';letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}.you .tag{left:auto;right:18px}.connector{width:2px;height:14px;margin-left:30px;background:linear-gradient(180deg,rgba(33,29,48,.14),transparent)}
+.input-row{display:flex;gap:9px;margin-top:12px;padding-top:14px;border-top:1px solid rgba(33,29,48,.08)}.badge{width:54px;height:54px;flex-shrink:0;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(240,85,61,.16),rgba(240,85,61,.06));border:1px solid rgba(240,85,61,.32);font:900 23px Fraunces;color:var(--coral)}.submit{width:54px;height:54px;flex-shrink:0;border:0;border-radius:16px;background:linear-gradient(135deg,var(--mint2),#17A88A);color:#fff;font-size:19px;font-weight:700}.submit:disabled{opacity:.4}
+.msg{min-height:20px;text-align:center;margin-top:9px;font:500 11.5px 'IBM Plex Mono';color:var(--dim)}.msg.error{color:var(--coral);font-weight:800;animation:pop .35s ease}.msg.success{color:var(--mint)}
+.wrong{animation:shake .35s ease;border-color:var(--coral)!important;box-shadow:0 0 0 3px rgba(240,85,61,.14)!important}
+.bottom{display:flex;justify-content:center;gap:18px}.linkbtn{margin-top:11px;background:none;border:0;color:var(--dim);font:10.5px 'IBM Plex Mono';text-decoration:underline;cursor:pointer;padding:2px}
+.overlay{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(247,245,240,.4);backdrop-filter:blur(8px)}.overlay.active{display:flex}.card{width:100%;max-width:360px;border-radius:26px;padding:28px 22px;text-align:center}.card h2{font:900 30px Fraunces;margin:0 0 8px}.card p{color:var(--dim);font-size:14px;line-height:1.5;margin:0 0 18px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}@keyframes pop{0%{opacity:0;transform:scale(.8)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}@keyframes drop{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
+@media(max-width:360px){h1{font-size:28px}.link{font-size:17px;padding:12px 15px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+
+<header>
+  <div>
+    <div class="eyebrow">you vs. your friend</div>
+    <h1>Chain<span>.</span></h1>
+  </div>
+  <div class="stats">
+    <div class="stat streak glass"><span class="n" id="streakN">0</span><span class="l">streak</span></div>
+    <div class="stat best glass"><span class="n" id="bestN">0</span><span class="l">best</span></div>
+  </div>
+</header>
+
+<!-- HOME -->
+<section id="home" class="screen">
+  <p class="hint glass">Play Chain with a real person. Create a room, send the code to your friend, and take turns in real time. Each word must start with the last letter of the previous word.</p>
+  <input id="nameHome" class="field" maxlength="18" placeholder="Your name">
+  <button id="createBtn" class="btn primary">Create a room</button>
+  <button id="showJoinBtn" class="btn glass">Join a room</button>
+  <div id="homeMsg" class="msg"></div>
+</section>
+
+<!-- CREATE -->
+<section id="create" class="screen hidden">
+  <div class="hint glass">Choose a category. You will create the room and wait for your friend to join.</div>
+  <input id="nameCreate" class="field" maxlength="18" placeholder="Your name">
+  <div class="grid">
+    <button class="btn glass cat" data-cat="Animals">Animals</button>
+    <button class="btn glass cat" data-cat="Countries">Countries</button>
+    <button class="btn glass cat" data-cat="Food">Food</button>
+    <button class="btn glass cat" data-cat="Movies">Movies</button>
+    <button class="btn any cat" data-cat="Anything">Anything goes</button>
+  </div>
+  <button id="backHome1" class="linkbtn">← back</button>
+  <div id="createMsg" class="msg"></div>
+</section>
+
+<!-- WAITING -->
+<section id="waiting" class="screen hidden">
+  <div class="hint glass center">Send this room code to your friend.</div>
+  <div id="roomCode" class="room-code glass">------</div>
+  <button id="copyCode" class="btn primary">Copy room code</button>
+  <div class="hint glass center"><b id="waitingCategory">Category</b><br><span id="waitingText">Waiting for Player 2…</span></div>
+  <button id="cancelRoom" class="linkbtn">Cancel room</button>
+  <div id="waitMsg" class="msg"></div>
+</section>
+
+<!-- JOIN -->
+<section id="join" class="screen hidden">
+  <div class="hint glass">Enter the 6-character room code your friend sent you.</div>
+  <input id="nameJoin" class="field" maxlength="18" placeholder="Your name">
+  <input id="roomInput" class="field" maxlength="6" placeholder="ROOM CODE" style="text-transform:uppercase;letter-spacing:.18em;text-align:center">
+  <button id="joinBtn" class="btn primary">Join room</button>
+  <button id="backHome2" class="linkbtn">← back</button>
+  <div id="joinMsg" class="msg"></div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="game hidden">
+  <div class="panel glass">
+    <div class="status">
+      <span><b id="myName">You</b> vs <b id="opName">Friend</b></span>
+      <span>Chain: <b id="chainCount">0</b></span>
+    </div>
+    <div class="timer">
+      <div class="track"><div id="timerFill" class="fill"></div></div>
+      <div id="timerNum" class="timer-num">12.0s</div>
+    </div>
+    <div id="chain" class="chain"></div>
+    <div class="input-row">
+      <div id="nextLetter" class="badge">A</div>
+      <input id="wordInput" class="field" type="text" placeholder="Your word…" autocomplete="off" spellcheck="false">
+      <button id="submitBtn" class="submit">➜</button>
+    </div>
+    <div id="msg" class="msg"></div>
+    <div class="bottom">
+      <button id="giveUp" class="linkbtn">I'm stuck</button>
+      <button id="leaveGame" class="linkbtn">Leave game</button>
+    </div>
+  </div>
+</section>
+
+<div id="overlay" class="overlay">
+  <div class="card glass">
+    <h2 id="overTitle">Game over</h2>
+    <p id="overText"></p>
+    <button id="rematch" class="btn primary">Play again</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const SUPABASE_URL="https://zhouclfawobgekxltngb.supabase.co";
+const SUPABASE_KEY="sb_publishable_XYGgBE-j9BLarU71cWOTnA_VVsndt3v";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const BANKS={
+Animals:["Aardvark","Alligator","Antelope","Baboon","Badger","Bear","Beaver","Bison","Camel","Cat","Cheetah","Chimpanzee","Cow","Crab","Crow","Deer","Dog","Dolphin","Donkey","Duck","Eagle","Elephant","Elk","Emu","Falcon","Ferret","Fox","Frog","Giraffe","Goat","Goose","Gorilla","Hawk","Hedgehog","Hippopotamus","Horse","Hyena","Ibex","Iguana","Jackal","Jaguar","Kangaroo","Koala","Leopard","Lion","Lizard","Llama","Lobster","Lynx","Monkey","Moose","Mouse","Newt","Ostrich","Otter","Owl","Ox","Panda","Panther","Parrot","Peacock","Pelican","Penguin","Pig","Quail","Rabbit","Raccoon","Rat","Rhinoceros","Salamander","Seal","Shark","Sheep","Skunk","Sloth","Snail","Snake","Sparrow","Spider","Squirrel","Stork","Swan","Tiger","Toad","Turkey","Turtle","Vulture","Walrus","Weasel","Whale","Wolf","Wombat","Yak","Zebra"],
+Countries:["Afghanistan","Albania","Algeria","Argentina","Australia","Austria","Bangladesh","Belgium","Bhutan","Bolivia","Brazil","Bulgaria","Cambodia","Canada","Chile","China","Colombia","Croatia","Cuba","Denmark","Ecuador","Egypt","Estonia","Ethiopia","Fiji","Finland","France","Gabon","Georgia","Germany","Ghana","Greece","Guatemala","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Laos","Latvia","Lebanon","Liberia","Libya","Lithuania","Luxembourg","Madagascar","Malaysia","Maldives","Mali","Malta","Mexico","Moldova","Monaco","Mongolia","Morocco","Myanmar","Namibia","Nepal","Netherlands","Nicaragua","Niger","Nigeria","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Samoa","Senegal","Serbia","Singapore","Slovakia","Slovenia","Somalia","Spain","Sudan","Sweden","Switzerland","Syria","Taiwan","Tanzania","Thailand","Togo","Tunisia","Turkey","Uganda","Ukraine","Uruguay","Vanuatu","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"],
+Food:["Apple","Avocado","Bacon","Bagel","Banana","Beans","Beef","Beet","Biryani","Biscuit","Bread","Broccoli","Burger","Burrito","Butter","Cabbage","Cake","Candy","Carrot","Cashew","Cauliflower","Cereal","Cheese","Cherry","Chicken","Chili","Chocolate","Coconut","Coffee","Cookie","Corn","Crab","Cucumber","Curry","Custard","Date","Dosa","Doughnut","Dumpling","Egg","Eggplant","Falafel","Fig","Fish","Fries","Garlic","Ginger","Grape","Grapefruit","Guava","Ham","Honey","Hummus","Jam","Jelly","Juice","Kale","Ketchup","Kiwi","Lasagna","Lemon","Lentil","Lettuce","Lime","Lobster","Mango","Meat","Melon","Milk","Mushroom","Mustard","Naan","Noodles","Nut","Oats","Okra","Olive","Omelette","Onion","Orange","Oyster","Pancake","Papaya","Pasta","Peach","Peanut","Pear","Pepper","Pickle","Pineapple","Pizza","Popcorn","Pork","Potato","Pretzel","Pudding","Pumpkin","Quiche","Quinoa","Radish","Raisin","Rice","Salad","Salmon","Salsa","Samosa","Sandwich","Sauce","Sausage","Shrimp","Soup","Spaghetti","Spinach","Steak","Strawberry","Sugar","Sushi","Taco","Tamale","Tangerine","Tart","Tea","Toast","Tofu","Tomato","Tortilla","Turkey","Vanilla","Waffle","Walnut","Watermelon","Wheat","Yogurt","Zucchini"],
+Movies:["Alien","Avatar","Batman","Cars","Coco","Contact","Dune","Elf","Encanto","Frozen","Gladiator","Grease","Hercules","Inception","Interstellar","Joker","Jaws","Klaus","Luca","Matrix","Moana","Nemo","Notebook","Oppenheimer","Onward","Parasite","Psycho","Ratatouille","Rio","Rocky","Shrek","Soul","Tangled","Titanic","Up","Vice","Whiplash","Wonka","Zootopia","Zodiac"],
+Anything:["Ant","Apple","Arrow","Ball","Book","Bridge","Cup","Cat","Candle","Door","Dream","Drum","Ear","Eagle","Engine","Fan","Feather","Forest","Gate","Garden","Guitar","Hat","House","Harbor","Ink","Island","Igloo","Jacket","Jar","Jungle","Kite","Key","Kingdom","Lamp","Lion","Lake","Moon","Mountain","Mirror","Nest","Nose","Needle","Ocean","Orange","Owl","Pencil","Piano","Puzzle","Queen","Quilt","Quiver","River","Rain","Rocket","Star","Sun","Stone","Table","Tiger","Tower","Umbrella","Unicorn","Urn","Van","Violin","Village","Water","Wall","Window","Xylophone","Yarn","Yellow","Yak","Zebra","Zoo","Zephyr"]
+};
+
+const $=id=>document.getElementById(id);
+const screens=["home","create","waiting","join","game"];
+let room=null, roomChannel=null, mySlot=0, myId=null, myName="", category="";
+let timer=null, deadline=0, localGameStarted=false;
+
+function normalize(x){return x.trim().toLowerCase()}
+function first(x){return x.trim()[0]?.toUpperCase()||""}
+function last(x){return x.trim().replace(/[^a-zA-Z]$/,"").slice(-1).toUpperCase()}
+function showScreen(id){screens.forEach(s=>$(s).classList.toggle("hidden",s!==id))}
+function message(id,text,type=""){const e=$(id);e.textContent=text;e.className="msg "+type}
+function getId(){let id=localStorage.getItem("chain_player_id");if(!id){id=crypto.randomUUID();localStorage.setItem("chain_player_id",id)}return id}
+myId=getId();
+
+function generateCode(){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out="";
+  for(let i=0;i<6;i++)out+=chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+function bankHas(word){
+  return (BANKS[category]||[]).some(x=>normalize(x)===normalize(word));
+}
+
+function setTimerFromRoom(r){
+  clearInterval(timer);
+  if(r.status!=="playing" || !r.updated_at){$("timerFill").style.width="100%";$("timerNum").textContent="12.0s";return}
+  // The authoritative turn clock starts whenever the room's updated_at changes for a turn.
+  deadline=new Date(r.updated_at).getTime()+12000;
+  timer=setInterval(()=>{
+    const left=Math.max(0,deadline-Date.now());
+    $("timerFill").style.width=(left/12000*100)+"%";
+    $("timerNum").textContent=(left/1000).toFixed(1)+"s";
+    $("timerFill").classList.toggle("warn",left<=6000&&left>3000);
+    $("timerFill").classList.toggle("danger",left<=3000);
+    if(left<=0){clearInterval(timer);if(r.turn===mySlot && !room.__timedOut){room.__timedOut=true;finishRoom(3-r.turn,"Time's up!");}}
+  },100);
+}
+
+function render(r){
+  room=r;
+  category=r.category;
+  if(r.status==="waiting"){
+    $("roomCode").textContent=r.code;
+    $("waitingCategory").textContent=category;
+    $("waitingText").textContent=r.player2_id?"Starting…":"Waiting for Player 2…";
+    return;
+  }
+  if(r.status==="finished"){
+    renderChain(r);
+    $("overlay").classList.add("active");
+    const win=r.winner===mySlot;
+    $("overTitle").textContent=win?"You win!":"You lose!";
+    $("overText").textContent=(win?"Great chain.":"Your opponent wins.")+" Chain length: "+(r.chain||[]).length+".";
+    return;
+  }
+  showScreen("game");
+  $("myName").textContent=mySlot===1?(r.player1_name||"You"):(r.player2_name||"You");
+  $("opName").textContent=mySlot===1?(r.player2_name||"Friend"):(r.player1_name||"Friend");
+  $("nextLetter").textContent=r.next_letter||"A";
+  renderChain(r);
+  const mine=r.turn===mySlot;
+  $("wordInput").disabled=!mine;
+  $("submitBtn").disabled=!mine;
+  message("msg",mine?"Your turn":"Opponent's turn",mine?"success":"");
+  setTimerFromRoom(r);
+}
+
+function renderChain(r){
+  const box=$("chain");box.innerHTML="";
+  (r.chain||[]).forEach(item=>{
+    const c=document.createElement("div");c.className="connector";box.appendChild(c);
+    const d=document.createElement("div");d.className="link "+(item.player===mySlot?"you":"");
+    const tag=document.createElement("span");tag.className="tag";tag.textContent=item.player===mySlot?"you":(item.name||"opponent");
+    const m=document.createElement("span");m.className="mark";m.textContent=first(item.word);
+    const t=document.createElement("span");t.textContent=item.word.substring(1);
+    d.append(tag,m,t);box.appendChild(d);
+  });
+  $("chainCount").textContent=(r.chain||[]).length;
+  requestAnimationFrame(()=>box.scrollTop=box.scrollHeight);
+}
+
+async function subscribe(code){
+  if(roomChannel)await sb.removeChannel(roomChannel);
+  roomChannel=sb.channel("chain-room-"+code);
+  roomChannel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"rooms",filter:"code=eq."+code},payload=>{
+    render(payload.new);
+  }).subscribe();
+}
+
+async function fetchRoom(code){
+  const {data,error}=await sb.from("rooms").select("*").eq("code",code.toUpperCase()).maybeSingle();
+  if(error)throw error;
+  return data;
+}
+
+async function createRoom(cat,name){
+  category=cat;myName=name||"Player 1";
+  const code=generateCode();
+  const startWords=BANKS[cat].filter(w=>first(w)==="A");
+  const start=startWords[Math.floor(Math.random()*startWords.length)]||BANKS[cat][0];
+  const {data,error}=await sb.from("rooms").insert({
+    code,category:cat,status:"waiting",player1_id:myId,player1_name:myName,turn:1,chain:[],used_words:[],next_letter:"A"
+  }).select().single();
+  if(error)throw error;
+  mySlot=1;room=data;
+  $("roomCode").textContent=code;showScreen("waiting");message("waitMsg","Room created.","success");
+  await subscribe(code);
+}
+
+async function joinRoom(code,name){
+  code=code.trim().toUpperCase();myName=name||"Player 2";
+  const r=await fetchRoom(code);
+  if(!r)throw new Error("Room not found.");
+  if(r.status!=="waiting"||r.player2_id)throw new Error("That room is already full.");
+  const {data,error}=await sb.from("rooms").update({player2_id:myId,player2_name:myName,status:"playing",turn:1,chain:[],used_words:[],next_letter:"A"}).eq("code",code).eq("status","waiting").is("player2_id",null).select().single();
+  if(error||!data)throw new Error("Could not join this room.");
+  mySlot=2;room=data;category=data.category;await subscribe(code);showScreen("game");
+  // Host starts the first word after both players are connected.
+  await startRoundIfHost(data);
+}
+
+async function startRoundIfHost(r){
+  if(mySlot!==1 || r.status!=="playing" || (r.chain||[]).length) return;
+  const candidates=BANKS[r.category].filter(w=>first(w)==="A");
+  const word=candidates[Math.floor(Math.random()*candidates.length)]||BANKS[r.category][0];
+  const used=[normalize(word)];
+  const chain=[{word,player:1,name:r.player1_name||"Player 1"}];
+  const {data,error}=await sb.from("rooms").update({chain,used_words:used,next_letter:last(word),turn:2}).eq("code",r.code).eq("status","playing").eq("turn",1).select().single();
+  if(!error&&data)render(data);
+}
+
+async function submitWord(){
+  if(!room||room.status!=="playing"||room.turn!==mySlot)return;
+  const raw=$("wordInput").value.trim(),word=normalize(raw);
+  if(!word){wrong("Enter a word");return}
+  if(!/^[a-zA-Z]+$/.test(raw)){wrong("Wrong answer — letters only");return}
+  if(first(raw)!==room.next_letter){wrong("Wrong answer — starts with "+room.next_letter);return}
+  if((room.used_words||[]).includes(word)){wrong("Wrong answer — already used");return}
+  if(!bankHas(raw)){wrong("Wrong answer");return}
+  const chain=[...(room.chain||[]),{word:raw,player:mySlot,name:myName}];
+  const used=[...(room.used_words||[]),word];
+  const next=last(raw);
+  const {data,error}=await sb.from("rooms").update({chain,used_words:used,next_letter:next,turn:3-mySlot}).eq("code",room.code).eq("status","playing").eq("turn",mySlot).select().single();
+  if(error||!data){wrong("That move was already taken.");return}
+  $("wordInput").value="";
+  render(data);
+}
+
+function wrong(text){message("msg",text,"error");$("wordInput").classList.remove("wrong");void $("wordInput").offsetWidth;$("wordInput").classList.add("wrong");setTimeout(()=>$("wordInput").classList.remove("wrong"),400)}
+
+async function finishRoom(winner,reason){
+  if(!room)return;
+  clearInterval(timer);
+  const {data}=await sb.from("rooms").update({status:"finished",winner}).eq("code",room.code).eq("status","playing").select().single();
+  if(data)render(data);
+}
+
+async function leaveRoom(){
+  if(room){
+    await sb.from("rooms").update({status:"finished",winner:3-mySlot}).eq("code",room.code).eq("status","playing");
+  }
+  if(roomChannel)await sb.removeChannel(roomChannel);
+  room=null;showScreen("home");message("homeMsg","Left the room.");
+}
+
+$("createBtn").onclick=()=>{const n=$("nameHome").value.trim();$("nameCreate").value=n;showScreen("create")};
+$("showJoinBtn").onclick=()=>showScreen("join");
+$("backHome1").onclick=()=>showScreen("home");
+$("backHome2").onclick=()=>showScreen("home");
+
+document.querySelectorAll(".cat").forEach(b=>b.onclick=async()=>{
+  const name=$("nameCreate").value.trim()||$("nameHome").value.trim()||"Player 1";
+  try{message("createMsg","Creating room…");await createRoom(b.dataset.cat,name)}
+  catch(e){message("createMsg",e.message||"Could not create room.","error")}
+});
+
+$("joinBtn").onclick=async()=>{
+  try{message("joinMsg","Joining room…");await joinRoom($("roomInput").value,$("nameJoin").value.trim()||"Player 2")}
+  catch(e){message("joinMsg",e.message||"Could not join room.","error")}
+};
+
+$("copyCode").onclick=async()=>{
+  try{await navigator.clipboard.writeText($("roomCode").textContent);message("waitMsg","Room code copied.","success")}
+  catch(e){message("waitMsg","Code: "+$("roomCode").textContent)}
+};
+
+$("cancelRoom").onclick=leaveRoom;
+$("leaveGame").onclick=leaveRoom;
+$("giveUp").onclick=()=>finishRoom(3-mySlot,"You gave up.");
+
+$("submitBtn").onclick=submitWord;
+$("wordInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submitWord()}});
+
+$("roomInput").addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6)});
+
+$("rematch").onclick=async()=>{
+  $("overlay").classList.remove("active");
+  if(!room)return;
+  if(mySlot===1){
+    await sb.from("rooms").update({status:"waiting",winner:null,chain:[],used_words:[],next_letter:"A",turn:1}).eq("code",room.code);
+    showScreen("waiting");
+  }else{
+    message("msg","Ask Player 1 to start a rematch.");
+  }
+};
+
+// Host notices player 2 joined and starts the game.
+setInterval(async()=>{
+  if(room&&mySlot===1&&room.status==="waiting"&&room.player2_id){
+    const r=await fetchRoom(room.code);
+    if(r){room=r;await startRoundIfHost(r)}
+  }
+},1000);
+</script>
+</body>
+</html>
